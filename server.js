@@ -11,11 +11,16 @@ app.use(cors());
 app.use(express.json());
 
 // Health check
-app.get('/', (req, res) => {
+app.get('/', (_req, res) => {
   res.send('Success Subscription API is up and running!');
 });
 
-// Routes
+// Add this so GET /api works too
+app.get('/api', (_req, res) => {
+  res.send('API is working');
+});
+
+// Mount routes
 app.use('/api', userRoutes);
 
 // Connect to MongoDB

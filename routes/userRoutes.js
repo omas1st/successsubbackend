@@ -3,10 +3,10 @@ const { registerUser, getAllUsers } = require('../controllers/userController');
 
 const router = express.Router();
 
-// Matches your React form POST to /api/subscribe
+// Frontend does: POST /api/subscribe
 router.post('/subscribe', registerUser);
 
-// Optional: view all subscriptions
+// Optional: GET /api/subscribe to list all
 router.get('/subscribe', getAllUsers);
 
 module.exports = router;
