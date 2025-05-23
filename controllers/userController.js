@@ -3,20 +3,27 @@ const nodemailer = require('nodemailer');
 
 exports.registerUser = async (req, res) => {
   try {
-    const { name, email, whatsapp, subscriptionPlan, paymentMethod, paymentMade } = req.body;
-
-    // Validate required fields
-    for (const field of ['name','email','whatsapp','subscriptionPlan','paymentMethod','paymentMade']) {
-      if (!req.body[field]) {
-        return res.status(400).json({ message: `Missing field: ${field}` });
+    console.log('📥 Received subscription request:', req.body);
+    
+    const requiredFields = ['name', 'email', 'whatsapp', 'subscriptionPlan', 'paymentMethod', 'paymentMade'];
+    for (const field of requiredFields) {
+      if (!req.body[field]?.trim()) {
+        return res.status(400).json({ message: `Missing required field: ${field}` });
       }
     }
 
-    // Save subscription
-    const user = new User({ name, email, whatsapp, subscriptionPlan, paymentMethod, paymentMade });
-    await user.save();
+    const user = new User({
+      name: req.body.name.trim(),
+      email: req.body.email.trim(),
+      whatsapp: req.body.whatsapp.trim(),
+      subscriptionPlan: req.body.subscriptionPlan.trim(),
+      paymentMethod: req.body.paymentMethod.trim(),
+      paymentMade: req.body.paymentMade.trim()
+    });
 
-    // Send notification email to admin if creds exist
+    const savedUser = await user.save();
+    console.log('📝 Saved user:', savedUser);
+
     if (process.env.ADMIN_EMAIL && process.env.ADMIN_EMAIL_PASSWORD) {
       try {
         const transporter = nodemailer.createTransport({
@@ -31,29 +38,31 @@ exports.registerUser = async (req, res) => {
           from: process.env.ADMIN_EMAIL,
           to: process.env.ADMIN_EMAIL,
           subject: 'Success Premium Subscription',
-          text: `New subscription details:\n${JSON.stringify(req.body, null, 2)}`
+          html: `<h2>New Subscription Details</h2>
+                 <pre>${JSON.stringify(req.body, null, 2)}</pre>`
         });
       } catch (mailErr) {
-        console.error('⚠️  Email send failed:', mailErr);
-        // NOTE: we do NOT return a 500 here
+        console.error('📧 Email error:', mailErr);
       }
-    } else {
-      console.warn('⚠️  Skipping email: ADMIN_EMAIL or ADMIN_EMAIL_PASSWORD not set');
     }
 
-    // Always return success
     return res.status(201).json({ message: 'Subscription successful' });
   } catch (err) {
-    console.error('💥 registerUser error:', err);
-    return res.status(500).json({ message: 'Server error', error: err.message });
+    console.error('💥 Registration Error:', err);
+    return res.status(500).json({ 
+      message: 'Server error',
+      error: err.message,
+      stack: process.env.NODE_ENV === 'production' ? undefined : err.stack
+    });
   }
 };
 
-exports.getAllUsers = async (_req, res) => {
+exports.getAllUsers = async (req, res) => {
   try {
-    const all = await User.find().sort({ subscribedAt: -1 });
-    return res.json(all);
+    const users = await User.find().sort({ subscribedAt: -1 });
+    res.json(users);
   } catch (err) {
-    return res.status(500).json({ message: 'Failed to fetch subscriptions', error: err.message });
+    console.error('📂 Fetch Users Error:', err);
+    res.status(500).json({ message: 'Failed to fetch subscriptions' });
   }
 };
