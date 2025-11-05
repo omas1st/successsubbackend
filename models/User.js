@@ -7,7 +7,7 @@ const userSchema = new mongoose.Schema({
   subscriptionPlan: { type: String, required: true },
   paymentMethod:    { type: String, required: true },
   paymentMade:      { type: String, required: true },
-  receiptUrl:       { type: String, required: true }, // New field for receipt URL
+  receiptUrl:       { type: String, required: true }, // New required field
   subscribedAt:     { type: Date,   default: Date.now }
 });
 
